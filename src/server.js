@@ -1,28 +1,32 @@
 import express from 'express';
-import router from './routes.js'; // Athuga að leiðin sé rétt
+import { router } from './routes.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import dotenv from 'dotenv';
+import helmet from 'helmet';
+
+dotenv.config();
+
+console.log('DB URL:', process.env.DATABASE_URL);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
-app.use(express.urlencoded({ extended: true }));
-
-//const __filename = fileURLToPath(import.meta.url);
-//const __dirname = dirname(__filename);
-const viewsPath = join(process.cwd(), 'src', 'views');
-
+const viewsPath = join(__dirname, 'views');
 
 app.set('views', viewsPath);
 app.set('view engine', 'ejs');
 
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
+app.disable('x-powered-by');
 app.use('/', router);
 
-// 404 síða
-app.use((req, res) => {
-  res.status(404).render('error', { message: 'Síða fannst ekki' });
-});
-
 const port = process.env.PORT || 3000;
+
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
+  console.log(`Server running on port ${port}`);
 });
