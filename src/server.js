@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { seedDatabase } from './seed.js';
+//import { seedDatabase } from './seed.js';
 
 dotenv.config();
 
@@ -30,4 +30,4 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-seedDatabase();
+//seedDatabase();

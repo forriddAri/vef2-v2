@@ -1,6 +1,6 @@
-import { getDatabase } from './lib/db.client.js';
+import { getDatabase } from './lib/db.client.js'; // Adjusted path
 
-async function seedDatabase() {
+export async function seedDatabase() {
     const db = getDatabase();
 
     try {
@@ -40,6 +40,3 @@ async function seedDatabase() {
         console.error("❌ Error seeding database:", error);
     }
 }
-
-// Run the function when script is executed
-seedDatabase();
