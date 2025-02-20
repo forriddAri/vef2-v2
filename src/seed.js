@@ -1,4 +1,4 @@
-import { getDatabase } from '../lib/db.client.js';
+import { getDatabase } from './lib/db.client.js';
 
 async function seedDatabase() {
     const db = getDatabase();
