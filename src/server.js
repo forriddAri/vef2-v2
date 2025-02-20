@@ -1,5 +1,5 @@
 import express from 'express';
-import { router } from './routes.js';
+import router from './routes.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
