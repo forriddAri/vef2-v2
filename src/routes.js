@@ -4,18 +4,22 @@ import { getDatabase } from './lib/db.client.js';
 export const router = express.Router();
 
 // 🔹 1. Render the form with categories
-router.get('/form', async (req, res) => {
+router.get('/form', async (_req, res) => {
   try {
     const db = getDatabase();
-    const result = await db?.query('SELECT id, name FROM categories');
-    const categories = result?.rows ?? [];
+    console.log('✅ Database object:', db); // Check if database is connected
 
+    const result = await db?.query('SELECT id, name FROM categories');
+    console.log('📌 Fetched categories:', result?.rows); // Log fetched categories
+
+    const categories = result?.rows ?? [];
     res.render('form', { title: 'Búa til spurningu', categories });
   } catch (error) {
-    console.error('Villa við að sækja flokka:', error);
-    res.status(500).send('Villa við að hlaða inn formi');
+    console.error('❌ Error fetching categories:', error);
+    res.status(500).send('Error loading form');
   }
 });
+
 
 // 🔹 2. Handle form submission (insert question + answers)
 router.post('/questions', async (req, res) => {
