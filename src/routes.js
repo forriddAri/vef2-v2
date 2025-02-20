@@ -1,72 +1,53 @@
 import express from 'express';
-import pool from './lib/db.client.js';
+import { getDatabase } from './lib/db.client.js';
+import { environment } from './lib/environment.js';
+import { logger } from './lib/logger.js';
 
-const router = express.Router();
+export const router = express.Router();
 
-// Forsíða – birta alla flokka
 router.get('/', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM categories');
-    res.render('index', { categories: result.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).render('error', { message: 'Villa við að sækja gögn' });
-  }
+  const result = await getDatabase()?.query('SELECT * FROM categories');
+
+  const categories = result?.rows ?? [];
+
+  console.log(categories);
+  res.render('index', { title: 'Forsíða', categories });
 });
 
-// Flokkasíða – birta allar spurningar í flokki
-router.get('/category/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const category = await pool.query('SELECT * FROM categories WHERE id = $1', [id]);
-    const questions = await pool.query('SELECT * FROM questions WHERE category_id = $1', [id]);
-
-    if (category.rows.length === 0) {
-      return res.status(404).render('error', { message: 'Flokkur fannst ekki' });
-    }
-
-    res.render('category', { category: category.rows[0], questions: questions.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).render('error', { message: 'Villa við að sækja gögn' });
-  }
+router.get('/spurningar/:category', (req, res) => {
+  // TEMP EKKI READY FYRIR PRODUCTION
+  const title = req.params.category;
+  res.render('category', { title });
 });
 
-// Síða til að bæta við spurningu
-router.get('/add-question', async (req, res) => {
-  try {
-    const categories = await pool.query('SELECT * FROM categories');
-    res.render('form', { categories: categories.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).render('error', { message: 'Villa við að sækja gögn' });
-  }
+router.get('/form', (req, res) => {
+  res.render('form', { title: 'Búa til flokk' });
 });
 
-// Vinna úr formi og bæta við spurningu
-router.post('/add-question', async (req, res) => {
-  const { question, category_id, answers } = req.body;
-  try {
-    const newQuestion = await pool.query(
-      'INSERT INTO questions (question, category_id) VALUES ($1, $2) RETURNING id',
-      [question, category_id]
-    );
+router.post('/form', async (req, res) => {
+  const { name } = req.body;
 
-    const questionId = newQuestion.rows[0].id;
+  console.log(name);
 
-    // Setja inn svör (þarf að klára)
-    for (let answer of answers) {
-      await pool.query(
-        'INSERT INTO answers (question_id, answer, is_correct) VALUES ($1, $2, $3)',
-        [questionId, answer.text, answer.is_correct]
-      );
-    }
+  // Hér þarf að setja upp validation, hvað ef name er tómt? hvað ef það er allt handritið að BEE MOVIE?
+  // Hvað ef það er SQL INJECTION? HVAÐ EF ÞAÐ ER EITTHVAÐ ANNAÐ HRÆÐILEGT?!?!?!?!?!
+  // TODO VALIDATION OG HUGA AÐ ÖRYGGI
 
-    res.redirect('/');
-  } catch (err) {
-    console.error(err);
-    res.status(500).render('error', { message: 'Villa við að bæta við spurningu' });
+  // Ef validation klikkar, senda skilaboð um það á notanda
+
+  // Ef allt OK, búa til í gagnagrunn.
+  const env = environment(process.env, logger);
+  if (!env) {
+    process.exit(1);
   }
-});
 
-export default router;
+  const db = getDatabase();
+
+  const result = await db?.query('INSERT INTO categories (name) VALUES ($1)', [
+    name,
+  ]);
+
+  console.log(result);
+
+  res.render('form-created', { title: 'Flokkur búinn til' });
+});
