@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { seedDatabase } from '../scripts/seed.js';
+import { seedDatabase } from '/seed.js';
 
 dotenv.config();
 
