@@ -50,3 +50,17 @@ export async function query(q) {
 
   return result;
 }
+
+async function getCategories() {
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (e) {
+    console.error('Unable to connect', e);
+    return;
+  }
+    const result = await client.query('SELECT id, name FROM categories');
+    return result.rows;
+}
+
+module.exports = { getCategories };

@@ -1,53 +1,59 @@
 import express from 'express';
 import { getDatabase } from './lib/db.client.js';
-import { environment } from './lib/environment.js';
-import { logger } from './lib/logger.js';
 
 export const router = express.Router();
 
-router.get('/', async (req, res) => {
-  const result = await getDatabase()?.query('SELECT * FROM categories');
+// 🔹 1. Render the form with categories
+router.get('/form', async (req, res) => {
+  try {
+    const db = getDatabase();
+    const result = await db?.query('SELECT id, name FROM categories');
+    const categories = result?.rows ?? [];
 
-  const categories = result?.rows ?? [];
-
-  console.log(categories);
-  res.render('index', { title: 'Forsíða', categories });
+    res.render('form', { title: 'Búa til spurningu', categories });
+  } catch (error) {
+    console.error('Villa við að sækja flokka:', error);
+    res.status(500).send('Villa við að hlaða inn formi');
+  }
 });
 
-router.get('/spurningar/:category', (req, res) => {
-  // TEMP EKKI READY FYRIR PRODUCTION
-  const title = req.params.category;
-  res.render('category', { title });
-});
+// 🔹 2. Handle form submission (insert question + answers)
+router.post('/questions', async (req, res) => {
+  const { category_id, question, answer1, answer2, answer3, correct_answer } = req.body;
 
-router.get('/form', (req, res) => {
-  res.render('form', { title: 'Búa til flokk' });
-});
-
-router.post('/form', async (req, res) => {
-  const { name } = req.body;
-
-  console.log(name);
-
-  // Hér þarf að setja upp validation, hvað ef name er tómt? hvað ef það er allt handritið að BEE MOVIE?
-  // Hvað ef það er SQL INJECTION? HVAÐ EF ÞAÐ ER EITTHVAÐ ANNAÐ HRÆÐILEGT?!?!?!?!?!
-  // TODO VALIDATION OG HUGA AÐ ÖRYGGI
-
-  // Ef validation klikkar, senda skilaboð um það á notanda
-
-  // Ef allt OK, búa til í gagnagrunn.
-  const env = environment(process.env, logger);
-  if (!env) {
-    process.exit(1);
+  if (!category_id || !question || !answer1 || !answer2 || !answer3 || !correct_answer) {
+    return res.status(400).send('Öll svæði eru nauðsynleg.');
   }
 
-  const db = getDatabase();
+  try {
+    const db = getDatabase();
 
-  const result = await db?.query('INSERT INTO categories (name) VALUES ($1)', [
-    name,
-  ]);
+    // 🔹 Insert the question and get the generated ID
+    const questionResult = await db?.query(
+      'INSERT INTO questions (category_id, question) VALUES ($1, $2) RETURNING id',
+      [category_id, question]
+    );
 
-  console.log(result);
+    const questionId = questionResult?.rows[0]?.id;
+    if (!questionId) throw new Error('Ekki tókst að vista spurningu');
 
-  res.render('form-created', { title: 'Flokkur búinn til' });
+    // 🔹 Insert the answers
+    const answers = [
+      { text: answer1, is_correct: correct_answer === "1" },
+      { text: answer2, is_correct: correct_answer === "2" },
+      { text: answer3, is_correct: correct_answer === "3" }
+    ];
+
+    for (const answer of answers) {
+      await db?.query(
+        'INSERT INTO answers (question_id, answer, is_correct) VALUES ($1, $2, $3)',
+        [questionId, answer.text, answer.is_correct]
+      );
+    }
+
+    res.redirect('/form-created');
+  } catch (error) {
+    console.error('Villa við að vista spurningu:', error);
+    res.status(500).send('Villa við að vista spurningu');
+  }
 });
