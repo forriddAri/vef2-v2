@@ -10,7 +10,7 @@ router.get('/form', async (req, res) => {
     const result = await db?.query('SELECT id, name FROM categories');
     const categories = result?.rows ?? [];
 
-    res.render('form', { title: 'Búa til spurningu', categories });
+    req.render('form', { title: 'Búa til spurningu', categories });
   } catch (error) {
     console.error('Villa við að sækja flokka:', error);
     res.status(500).send('Villa við að hlaða inn formi');
