@@ -1,0 +1,73 @@
+<%- include('header') -%>
+
+<h2>Spurningar um <%= category.name %></h2>
+
+<form id="quiz-form">
+    <% if (questions.length === 0) { %>
+        <p>⚠️ Engar spurningar fundnar í þessum flokk.</p>
+    <% } else { %>
+        <% questions.forEach(question => { %>
+            <fieldset>
+                <legend><%= question.question %></legend>
+                <% if (question.answers.length === 0) { %>
+                    <p>⚠️ Engir svarmöguleikar fundnir fyrir þessa spurningu.</p>
+                <% } else { %>
+                    <% question.answers.forEach(answer => { %>
+                        <label class="answer-label" data-answer-id="<%= answer.id %>">
+                            <input type="radio" name="question_<%= question.id %>" value="<%= answer.id %>">
+                            <%= answer.answer %>
+                        </label><br>
+                    <% }); %>
+                <% } %>
+            </fieldset>
+        <% }); %>
+    <% } %>
+
+    <button type="submit">Senda svör</button>
+</form>
+
+<script>
+document.getElementById("quiz-form").addEventListener("submit", async function(event) {
+    event.preventDefault(); // Prevent page reload
+
+    let formData = new FormData(this);
+    let answers = {};
+    for (let [key, value] of formData.entries()) {
+        answers[key] = value;
+    }
+
+    try {
+        let response = await fetch('/submit-answers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(answers)
+        });
+
+        if (!response.ok) {
+            throw new Error("Villa við að senda svör.");
+        }
+
+        let result = await response.json();
+        
+        // Remove previous styles before applying new ones
+        document.querySelectorAll('.answer-label').forEach(label => {
+            label.classList.remove("correct-answer", "incorrect-answer");
+        });
+
+        // Apply correct/incorrect styles
+        document.querySelectorAll('.answer-label').forEach(label => {
+            let answerId = label.getAttribute("data-answer-id");
+            if (result[answerId] === "correct") {
+                label.classList.add("correct-answer"); // Apply green color
+            } else if (result[answerId] === "incorrect") {
+                label.classList.add("incorrect-answer"); // Apply red color
+            }
+        });
+
+    } catch (error) {
+        console.error("❌ JavaScript Error:", error);
+    }
+});
+</script>
+
+<%- include('footer') -%>

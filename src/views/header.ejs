@@ -5,6 +5,74 @@
   <meta charset="utf-8">
   <title><%= locals.title ?? '' %> — Spurningavefurinn</title>
   <link rel="stylesheet" href="../../public/styles.css">
+
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+
+    <!-- Inline CSS -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            background: white;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        nav a {
+            color: blue;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+       /* Default label style */
+.answer-label {
+    font-size: 16px;
+    font-weight: normal;
+}
+
+/* Green for correct answers */
+.correct-answer {
+    color: green;
+    font-weight: bold;
+}
+
+/* Red for incorrect answers */
+.incorrect-answer {
+    color: red;
+    font-weight: bold;
+}
+
+    </style>
+  
 </head>
 
 <body>

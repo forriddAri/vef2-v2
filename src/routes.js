@@ -19,6 +19,90 @@ router.get('/form', async (_req, res) => {
     res.status(500).send('Error loading form');
   }
 });
+router.post('/submit-answers', async (req, res) => {
+  const db = getDatabase();
+  const userAnswers = req.body; // Notandinn valdi þessi svör
+
+  console.log("📥 Incoming POST request to /submit-answers");
+  console.log("📌 User answers received:", userAnswers);
+
+  try {
+      // Sækja öll rétt svör úr gagnagrunninum
+      const correctAnswersResult = await db?.query('SELECT id FROM answers WHERE is_correct = true');
+      const correctAnswers = correctAnswersResult?.rows.map(row => row.id) ?? [];
+
+      console.log("✅ Correct answers:", correctAnswers);
+
+      // Athuga hvaða svör notandinn valdi eru rétt eða röng
+      let results = {};
+      for (let key in userAnswers) {
+          results[userAnswers[key]] = correctAnswers.includes(parseInt(userAnswers[key])) ? 'correct' : 'incorrect';
+      }
+
+      console.log("🔍 Answer results:", results);
+
+      // Skila JSON svörum svo hægt sé að uppfæra lit í JavaScript
+      res.json(results);
+  } catch (error) {
+      console.error('❌ Error checking answers:', error);
+      res.status(500).json({ error: 'Villa við að athuga svör' });
+  }
+});
+
+
+router.get('/spurningar/:category_id', async (req, res) => {
+  const { category_id } = req.params;
+  const db = getDatabase();
+
+  try {
+      console.log(`🔍 Fetching category with ID: ${category_id}`);
+
+      // Sækja flokkinn
+      const categoryResult = await db?.query('SELECT * FROM categories WHERE id = $1', [category_id]);
+      const category = categoryResult?.rows[0];
+
+      if (!category) {
+          return res.status(404).send('⚠️ Flokkur fannst ekki.');
+      }
+
+      console.log(`✅ Found category: ${category.name}`);
+
+      // Sækja allar spurningar fyrir þennan flokk
+      const questionsResult = await db?.query('SELECT * FROM questions WHERE category_id = $1', [category_id]);
+      const questions = questionsResult?.rows ?? [];
+
+      // Sækja svör fyrir hverja spurningu
+      const answersResult = await db?.query('SELECT * FROM answers WHERE question_id IN (SELECT id FROM questions WHERE category_id = $1)', [category_id]);
+      const answers = answersResult?.rows ?? [];
+
+      // Tengja svör við réttar spurningar
+      const questionsWithAnswers = questions.map(question => ({
+          ...question,
+          answers: answers.filter(answer => answer.question_id === question.id)
+      }));
+
+      console.log(`📌 Found ${questionsWithAnswers.length} questions for category ${category.name}`);
+
+      res.render('questions', { title: `Spurningar um ${category.name}`, category, questions: questionsWithAnswers });
+  } catch (error) {
+      console.error('❌ Villa við að sækja spurningar:', error);
+      res.status(500).send('Villa við að hlaða inn spurningum.');
+  }
+});
+
+
+router.get('/', async (_req, res) => {
+  try {
+      const db = getDatabase();
+      const result = await db?.query('SELECT * FROM categories');
+      const categories = result?.rows ?? [];
+
+      res.render('index', { title: 'Forsíða', categories });
+  } catch (error) {
+      console.error('❌ Error fetching categories:', error);
+      res.status(500).send('Villa við að hlaða inn forsíðu');
+  }
+});
 
 
 // 🔹 2. Handle form submission (insert question + answers)
